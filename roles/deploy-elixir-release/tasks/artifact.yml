@@ -24,6 +24,9 @@
       - --strip-components=1
     owner: "{{ release_user }}"
     group: "{{ release_group }}"
+  # A new artifact means new code; always restart so the running node picks it
+  # up (config/unit may be unchanged on a code-only deploy).
+  notify: Restart elixir service
 
 - name: Ensure ownership of release_dir
   file:
