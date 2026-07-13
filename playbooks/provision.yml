@@ -13,3 +13,4 @@
     - build-toolchain # deploy user + asdf + Erlang/Elixir/Node build prerequisites
     - postgres        # local PostgreSQL server
     - caddy           # Caddy reverse proxy with automatic TLS
+    - mail            # local SMTP relay (Postfix, loopback-only)

@@ -33,6 +33,9 @@ checkout, Postgres, releases, Caddy — lives there.
 - **postgres** – PostgreSQL 17 from PGDG, listening on loopback only by default.
 - **caddy** – Caddy from the official repo, with a base `Caddyfile` that imports
   per-app vhosts from `/etc/caddy/sites/*.caddy`.
+- **mail** – Postfix as a **loopback-only** SMTP relay. Apps send mail via
+  `127.0.0.1:25`; nothing off the box can reach it. Install/refresh on its own
+  with `ansible-playbook playbooks/install-mail.yml`.
 
 ## First-time setup
 
@@ -109,6 +112,14 @@ Set `http_port` and `domain` per environment in `app_vars/<app>.yml`. Omit
 `domain` to keep an app internal (it still runs and listens on its port; Caddy
 just won't publish it). For multiple upstreams behind one domain, use
 `caddy_routes` (see the example app_vars).
+
+## Sending email from apps
+
+Postfix listens on `127.0.0.1:25` only. Point your app's mailer at it — e.g. a
+Swoosh SMTP mailer with `relay: "127.0.0.1", port: 25, tls: false` and no auth
+(loopback is a trusted network). This is exactly how `app_vars/machteldbakker_nl.yml`
+wires `MachteldbakkerNl.Mailer`. Outbound goes direct-to-MX by default; set
+`mail_relayhost` in `host_vars/morbucks.yml` to route through a provider.
 
 ## Operating a deployed app
 

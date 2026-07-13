@@ -1,0 +1,10 @@
+---
+# Install the local SMTP relay (Postfix, loopback-only) on morbucks.
+# Run from your workstation:
+#   ansible-playbook playbooks/install-mail.yml
+- name: Install local SMTP relay on morbucks
+  hosts: morbucks_server
+  become: true
+  gather_facts: true
+  roles:
+    - mail

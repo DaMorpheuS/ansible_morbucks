@@ -1,0 +1,49 @@
+---
+# Install Postfix as a localhost-only SMTP relay so apps on this box can send
+# email by talking to 127.0.0.1:25. Postfix does not listen on any public
+# interface, so nothing off the machine can use it.
+
+- name: Preseed postfix debconf - Internet Site (non-interactive install)
+  debconf:
+    name: postfix
+    question: postfix/main_mailer_type
+    value: "Internet Site"
+    vtype: select
+
+- name: Preseed postfix debconf - system mail name
+  debconf:
+    name: postfix
+    question: postfix/mailname
+    value: "{{ mail_myhostname }}"
+    vtype: string
+
+- name: Install Postfix
+  apt:
+    name:
+      - postfix
+    state: present
+    update_cache: yes
+
+- name: Apply loopback-only Postfix configuration
+  # Appended at the end of main.cf; Postfix uses the last definition of each
+  # parameter, so this overrides the packaged defaults.
+  blockinfile:
+    path: /etc/postfix/main.cf
+    marker: "# {mark} ANSIBLE MANAGED - morbucks local relay"
+    block: |
+      # Only bind loopback - no off-host access to the mail server.
+      inet_interfaces = loopback-only
+      inet_protocols = all
+      # Only mail submitted from this machine may be relayed.
+      mynetworks = {{ mail_networks }}
+      myhostname = {{ mail_myhostname }}
+      myorigin = $myhostname
+      relayhost = {{ mail_relayhost }}
+      smtpd_banner = $myhostname ESMTP
+  notify: restart postfix
+
+- name: Ensure Postfix is running and enabled
+  systemd:
+    name: postfix
+    state: started
+    enabled: yes

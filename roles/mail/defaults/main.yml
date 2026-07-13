@@ -1,0 +1,13 @@
+---
+# Local SMTP relay (Postfix). Only processes mail submitted from this machine.
+#
+# Hostname used in HELO / myorigin. Defaults to the box's FQDN. For better
+# outbound deliverability set a real FQDN with matching PTR in host_vars.
+mail_myhostname: "{{ ansible_fqdn | default(ansible_hostname) }}"
+
+# Networks allowed to relay through Postfix. Loopback only by design.
+mail_networks: "127.0.0.0/8 [::1]/128"
+
+# "" = Postfix delivers directly to recipient MX servers.
+# Set to e.g. "[smtp.provider.com]:587" to route outbound via a smarthost.
+mail_relayhost: ""

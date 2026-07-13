@@ -1,0 +1,7 @@
+---
+# A full restart (not reload) is required because inet_interfaces changes only
+# take effect on restart.
+- name: restart postfix
+  systemd:
+    name: postfix
+    state: restarted
