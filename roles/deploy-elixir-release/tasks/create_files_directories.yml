@@ -1,0 +1,16 @@
+---
+# Create the filestore directories the app expects (from app_vars filestore).
+
+- name: Create filestore directories for the app
+  file:
+    state: directory
+    path: "{{ filestore_base_dir }}/{{ env }}/{{ app }}/{{ item.value }}"
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+    mode: '0755'
+  loop: "{{ app_vars.environments[env].filestore | dict2items }}"
+  when:
+    - app_vars.environments[env].filestore is defined
+    - app_vars.environments[env].filestore | length > 0
+  loop_control:
+    label: "{{ item.key }} -> {{ filestore_base_dir }}/{{ env }}/{{ app }}/{{ item.value }}"

@@ -1,0 +1,33 @@
+---
+- name: Build expected artifact path
+  set_fact:
+    release_artifact_src: "{{ (elixir_release_artifact_dir | expanduser) ~ '/' ~ app ~ '-' ~ tag ~ '-release.tar.gz' }}"
+
+- name: Ensure the artifact exists (build it first with ./build.sh)
+  stat:
+    path: "{{ release_artifact_src }}"
+  register: artifact_stat
+
+- name: Fail if the artifact is missing
+  assert:
+    that: artifact_stat.stat.exists
+    fail_msg: >-
+      Artifact not found: {{ release_artifact_src }}.
+      Build it first: ./build.sh {{ app }} {{ tag }}
+
+- name: Extract release into release_dir
+  unarchive:
+    src: "{{ release_artifact_src }}"
+    dest: "{{ release_dir }}"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+
+- name: Ensure ownership of release_dir
+  file:
+    path: "{{ release_dir }}"
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+    recurse: yes

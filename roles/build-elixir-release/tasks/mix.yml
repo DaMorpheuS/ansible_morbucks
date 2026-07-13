@@ -1,0 +1,48 @@
+---
+# Build the production release with mix. All commands run in the build dir so
+# asdf shims resolve the versions from .tool-versions.
+
+- name: Install hex locally
+  command: "mix local.hex --force"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+  changed_when: true
+
+- name: Install rebar locally
+  command: "mix local.rebar --force"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+  changed_when: true
+
+- name: Fetch dependencies for {{ mix_env }}
+  command: "mix deps.get --only {{ mix_env }}"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+    creates: "{{ elixir_release_build_dir }}/deps"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+
+- name: Compile application
+  command: "mix compile"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+
+- name: Setup assets tooling
+  command: "mix assets.setup"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+
+- name: Build and digest assets
+  command: "mix assets.deploy"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"
+
+- name: Build release
+  command: "mix release"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  environment: "{{ asdf_env | combine({'MIX_ENV': mix_env}) }}"

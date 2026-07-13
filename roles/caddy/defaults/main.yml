@@ -1,0 +1,9 @@
+---
+# caddy_config_dir, caddy_sites_dir and caddy_admin_email are defined in
+# group_vars/all/main.yml. Override caddy_admin_email via the vault.
+#
+# Optional extra lines injected into the Caddyfile global options block, e.g.
+# to use the staging ACME endpoint while testing:
+# caddy_global_extra: |
+#   acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+caddy_global_extra: ""

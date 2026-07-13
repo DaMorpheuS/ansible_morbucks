@@ -1,0 +1,11 @@
+---
+- name: Restart elixir service
+  systemd:
+    name: "{{ app }}_{{ env }}"
+    state: restarted
+    daemon_reload: yes
+
+- name: Reload caddy
+  systemd:
+    name: caddy
+    state: reloaded

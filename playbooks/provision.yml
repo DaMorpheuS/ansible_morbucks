@@ -1,0 +1,15 @@
+---
+# Provision the all-in-one morbucks server.
+# Run this FROM your workstation (targets the `morbucks` inventory host over SSH):
+#   ./provision.sh
+# or:
+#   ansible-playbook playbooks/provision.yml
+- name: Provision morbucks (base + build toolchain + postgres + caddy)
+  hosts: morbucks_server
+  become: true
+  gather_facts: true
+  roles:
+    - common          # base packages, admin users, ansible/rsync for local runs
+    - build-toolchain # deploy user + asdf + Erlang/Elixir/Node build prerequisites
+    - postgres        # local PostgreSQL server
+    - caddy           # Caddy reverse proxy with automatic TLS

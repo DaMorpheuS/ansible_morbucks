@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+# Base Caddyfile for morbucks. Per-app reverse-proxy vhosts are written to
+# {{ caddy_sites_dir }}/<app>_<env>.caddy by the deploy playbook and imported
+# below. Do not add app vhosts here by hand.
+{
+	email {{ caddy_admin_email }}
+{% if caddy_global_extra is defined and caddy_global_extra | trim | length > 0 %}
+	{{ caddy_global_extra | trim | indent(1) }}
+{% endif %}
+}
+
+import {{ caddy_sites_dir }}/*.caddy

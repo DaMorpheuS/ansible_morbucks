@@ -1,0 +1,22 @@
+---
+- name: Upload the migration runner
+  copy:
+    src: migrate.exs
+    dest: "{{ release_dir }}/migrate.exs"
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+    mode: "0644"
+
+- name: Run database migrations
+  command:
+    argv:
+      - "{{ release_dir }}/bin/{{ app }}"
+      - eval
+      - 'Code.eval_file("{{ release_dir }}/migrate.exs")'
+  args:
+    chdir: "{{ release_dir }}"
+  become: yes
+  become_user: "{{ release_user }}"
+  environment:
+    MIX_ENV: prod
+    ECTO_APP: "{{ app }}"

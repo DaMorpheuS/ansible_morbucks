@@ -1,0 +1,70 @@
+---
+# Deploy a previously built Elixir release locally on morbucks.
+# Run this ON morbucks (as root, or with sudo):
+#   ./deploy.sh <app> <tag> <env>
+#
+# This extracts the artifact, renders config, ensures the PostgreSQL
+# database/role, migrates, installs+starts the systemd service, and (if the
+# app defines a `domain`) registers a Caddy reverse-proxy vhost with auto TLS.
+- name: Deploy Elixir release (local)
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Fail if no app specified
+      assert:
+        that: app is defined and app | length > 0
+        fail_msg: "Set --extra-vars app=NAME"
+      run_once: true
+
+    - name: Fail if no tag specified
+      assert:
+        that: tag is defined and tag | length > 0
+        fail_msg: "Set --extra-vars tag=VERSION (e.g. 1.2.3)"
+      run_once: true
+
+    - name: Fail if no env specified
+      assert:
+        that: env is defined and env | length > 0
+        fail_msg: "Set --extra-vars env=NAME (e.g. prod, acc)"
+      run_once: true
+
+    - name: Check if app_vars file exists
+      stat:
+        path: "{{ playbook_dir }}/../app_vars/{{ app }}.yml"
+      register: app_vars_file
+      run_once: true
+
+    - name: Load app_vars for the app
+      include_vars:
+        file: "{{ playbook_dir }}/../app_vars/{{ app }}.yml"
+        name: "app_vars"
+      when: app_vars_file.stat.exists
+      run_once: true
+
+    - name: Fail with helpful message if app_vars file doesn't exist
+      fail:
+        msg: |
+          App configuration file 'app_vars/{{ app }}.yml' not found.
+
+          Available app configurations:
+          {% for file in (lookup('fileglob', playbook_dir + '/../app_vars/*.yml', wantlist=True) | map('basename') | map('regex_replace', '\.yml$', '') | sort) -%}
+          - {{ file }}
+          {% endfor %}
+
+          Specify one with: --extra-vars app=APP_NAME
+      when: not app_vars_file.stat.exists
+      run_once: true
+
+    - name: Validate the requested environment exists in app_vars
+      assert:
+        that:
+          - app_vars.environments is defined
+          - app_vars.environments[env] is defined
+        fail_msg: >-
+          Environment '{{ env }}' is not defined in app_vars/{{ app }}.yml
+          (available: {{ app_vars.environments.keys() | list | join(', ') if app_vars.environments is defined else 'none' }})
+      run_once: true
+  roles:
+    - role: deploy-elixir-release

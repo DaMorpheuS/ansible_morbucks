@@ -1,0 +1,82 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install base packages
+  apt:
+    name:
+      - wget
+      - curl
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - sudo
+      - vim
+      - htop
+      - git
+      # rsync: for pushing this project onto the box; ansible: so build/deploy
+      # playbooks can run locally on morbucks.
+      - rsync
+      - ansible
+    state: present
+
+- name: Set system timezone to UTC
+  command: timedatectl set-timezone UTC
+  changed_when: false
+
+- name: Ensure locales package is installed
+  apt:
+    name: locales
+    state: present
+
+- name: Enable en_US.UTF-8 locale
+  lineinfile:
+    path: /etc/locale.gen
+    regexp: '^#?\s*en_US\.UTF-8'
+    line: 'en_US.UTF-8 UTF-8'
+    state: present
+  register: locale_gen_file
+
+- name: Generate locales
+  command: locale-gen
+  when: locale_gen_file.changed
+
+- name: Set system default locale
+  command: update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+  changed_when: false
+
+# --- Admin users ----------------------------------------------------------
+- name: Create admin users
+  user:
+    name: "{{ item.name }}"
+    shell: /bin/bash
+    groups: sudo
+    password_lock: yes
+    create_home: yes
+    state: present
+  loop: "{{ admin_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install authorized SSH keys for admin users
+  authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ item.1 }}"
+    state: present
+  loop: "{{ admin_users | subelements('ssh_keys') }}"
+  loop_control:
+    label: "{{ item.0.name }}"
+
+# --- Ensure the community.postgresql collection is available for LOCAL runs -
+# The deploy playbook runs on morbucks and uses community.postgresql modules.
+- name: Check whether community.postgresql collection is present
+  command: ansible-galaxy collection list community.postgresql
+  register: pg_collection_check
+  changed_when: false
+  failed_when: false
+
+- name: Install community.postgresql collection if missing
+  command: ansible-galaxy collection install community.postgresql -p /usr/share/ansible/collections
+  when: "'community.postgresql' not in pg_collection_check.stdout"

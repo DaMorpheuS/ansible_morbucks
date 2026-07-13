@@ -1,0 +1,3 @@
+---
+# release_base_dir, release_group, release_gid and filestore_base_dir are
+# defined in group_vars/all/main.yml.

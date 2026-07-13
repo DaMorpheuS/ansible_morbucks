@@ -1,0 +1,47 @@
+---
+# Install exactly the Erlang/Elixir/Node versions the project pins in its
+# .tool-versions file. Plugins were added during provisioning.
+
+- name: Check for .tool-versions
+  stat:
+    path: "{{ elixir_release_build_dir }}/.tool-versions"
+  register: tool_versions_file
+
+- name: Read .tool-versions
+  slurp:
+    src: "{{ elixir_release_build_dir }}/.tool-versions"
+  register: tool_versions_content
+  when: tool_versions_file.stat.exists
+
+- name: Install pinned tool versions
+  block:
+    - name: Parse .tool-versions into (tool, version) lines
+      set_fact:
+        valid_tool_versions: >-
+          {{ (tool_versions_content.content | b64decode).split('\n')
+             | select('match', '^[^#].*\S+\s+\S+.*$') | list }}
+
+    - name: Ensure asdf plugin is present for each tool
+      command: "asdf plugin add {{ item.split()[0] }}"
+      args:
+        creates: "{{ asdf_data_dir }}/plugins/{{ item.split()[0] }}"
+      environment: "{{ asdf_env }}"
+      loop: "{{ valid_tool_versions }}"
+      loop_control:
+        label: "plugin {{ item.split()[0] }}"
+
+    - name: Install each tool version (this compiles Erlang - can take minutes)
+      command: "asdf install {{ item.split()[0] }} {{ item.split()[1] }}"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+        creates: "{{ asdf_data_dir }}/installs/{{ item.split()[0] }}/{{ item.split()[1] }}"
+      environment: "{{ asdf_env }}"
+      loop: "{{ valid_tool_versions }}"
+      loop_control:
+        label: "{{ item.split()[0] }} {{ item.split()[1] }}"
+  when: tool_versions_file.stat.exists and tool_versions_content.content is defined
+
+- name: Warn when no .tool-versions is present
+  debug:
+    msg: "No .tool-versions in {{ elixir_release_build_dir }} - skipping asdf install (build will use whatever is on PATH)."
+  when: not tool_versions_file.stat.exists

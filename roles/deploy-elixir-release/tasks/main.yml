@@ -1,0 +1,35 @@
+---
+# Deploy a built release on this machine. Runs as root (local connection).
+
+- name: System prerequisites (timezone / locale)
+  include_tasks: prerequisites.yml
+
+- name: Create release user, group and directories
+  include_tasks: setup.yml
+
+- name: Extract the release artifact
+  include_tasks: artifact.yml
+
+- name: Render application config
+  include_tasks: config.yml
+
+- name: Ensure PostgreSQL role and database
+  include_tasks: postgres.yml
+  when: app_vars.environments[env].database_name is defined
+
+- name: Run database migrations
+  include_tasks: migrate.yml
+  when: app_vars.environments[env].database_name is defined
+
+- name: Install and start the systemd service
+  include_tasks: systemd.yml
+
+- name: Register the Caddy reverse-proxy vhost
+  include_tasks: caddy.yml
+  when: app_vars.environments[env].domain is defined and app_vars.environments[env].domain | length > 0
+
+- name: Install shell helper for the app
+  include_tasks: bash_aliases.yml
+
+- name: Create filestore directories
+  include_tasks: create_files_directories.yml

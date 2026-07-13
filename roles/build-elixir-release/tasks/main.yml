@@ -1,0 +1,24 @@
+---
+# Build an Elixir release on this machine, as the unprivileged build user.
+
+- name: Ensure build base directory exists
+  file:
+    path: "{{ elixir_release_build_base_dir }}"
+    state: directory
+    mode: '0750'
+
+- name: Set build directory fact
+  set_fact:
+    elixir_release_build_dir: "{{ elixir_release_build_base_dir }}/{{ app }}-{{ tag }}"
+
+- name: Clone/checkout the application repository
+  include_tasks: git.yml
+
+- name: Install language versions from .tool-versions
+  include_tasks: asdf.yml
+
+- name: Compile and build the release
+  include_tasks: mix.yml
+
+- name: Archive the release artifact
+  include_tasks: archive.yml

@@ -1,0 +1,143 @@
+---
+# Installs the unprivileged build user, asdf, and every OS package needed to
+# compile Erlang/Elixir and build Node assets. Language versions themselves
+# are NOT installed here - the build script installs them from .tool-versions.
+
+- name: Create build user "{{ build_user }}"
+  user:
+    name: "{{ build_user }}"
+    home: "{{ build_user_home }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+
+- name: Ensure build user's .ssh directory exists
+  file:
+    path: "{{ build_user_home }}/.ssh"
+    state: directory
+    owner: "{{ build_user }}"
+    group: "{{ build_user }}"
+    mode: '0700'
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install asdf helper dependencies
+  apt:
+    name:
+      - git
+      - bash
+      - curl
+      - wget
+      - dirmngr
+      - gpg
+      - gawk
+    state: present
+
+- name: Install build dependencies for Erlang, Elixir and Node.js
+  apt:
+    name:
+      - build-essential
+      - autoconf
+      - m4
+      - libssl-dev
+      - libncurses5-dev
+      - libncurses-dev
+      - libgl1-mesa-dev
+      - libglu1-mesa-dev
+      - libpng-dev
+      - libssh-dev
+      - libxml2-dev
+      - libxslt-dev
+      - fop
+      - xsltproc
+      - unixodbc-dev
+    state: present
+
+# --- asdf binary (system-wide) -------------------------------------------
+- name: Create asdf installation directory
+  file:
+    path: "{{ asdf_install_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download asdf {{ asdf_version }} binary
+  get_url:
+    url: "https://github.com/asdf-vm/asdf/releases/download/v{{ asdf_version }}/asdf-v{{ asdf_version }}-linux-amd64.tar.gz"
+    dest: "/tmp/asdf-v{{ asdf_version }}-linux-amd64.tar.gz"
+    mode: '0644'
+
+- name: Extract asdf binary
+  unarchive:
+    src: "/tmp/asdf-v{{ asdf_version }}-linux-amd64.tar.gz"
+    dest: "{{ asdf_install_path }}"
+    remote_src: yes
+    creates: "{{ asdf_install_path }}/asdf"
+
+- name: Symlink asdf onto PATH
+  file:
+    src: "{{ asdf_install_path }}/asdf"
+    dest: "{{ asdf_binary_path }}"
+    state: link
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Clean up asdf archive
+  file:
+    path: "/tmp/asdf-v{{ asdf_version }}-linux-amd64.tar.gz"
+    state: absent
+
+# --- asdf data dir + shell config for build user --------------------------
+- name: Create asdf data directory for build user
+  file:
+    path: "{{ asdf_data_dir }}"
+    state: directory
+    owner: "{{ build_user }}"
+    group: "{{ build_user }}"
+    mode: '0755'
+
+- name: Configure asdf in build user's .bashrc (PATH)
+  lineinfile:
+    path: "{{ build_user_home }}/.bashrc"
+    regexp: '^export PATH="{{ asdf_data_dir }}/shims:\$PATH"'
+    line: 'export PATH="{{ asdf_data_dir }}/shims:$PATH"'
+    create: yes
+    owner: "{{ build_user }}"
+    group: "{{ build_user }}"
+    mode: '0644'
+
+- name: Configure asdf in build user's .bashrc (ASDF_DATA_DIR)
+  lineinfile:
+    path: "{{ build_user_home }}/.bashrc"
+    regexp: '^export ASDF_DATA_DIR="{{ asdf_data_dir }}"'
+    line: 'export ASDF_DATA_DIR="{{ asdf_data_dir }}"'
+    create: yes
+    owner: "{{ build_user }}"
+    group: "{{ build_user }}"
+    mode: '0644'
+
+- name: Verify asdf is callable
+  command: "{{ asdf_binary_path }} --version"
+  changed_when: false
+  register: asdf_version_out
+
+- name: Show asdf version
+  debug:
+    msg: "asdf installed: {{ asdf_version_out.stdout }}"
+
+# --- asdf plugins ---------------------------------------------------------
+- name: Add asdf plugins for build user
+  become: true
+  become_user: "{{ build_user }}"
+  shell: |
+    export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+    export PATH="{{ asdf_data_dir }}/shims:{{ asdf_binary_path | dirname }}:$PATH"
+    {{ asdf_binary_path }} plugin add {{ item }}
+  args:
+    creates: "{{ asdf_data_dir }}/plugins/{{ item }}"
+  loop: "{{ asdf_plugins }}"

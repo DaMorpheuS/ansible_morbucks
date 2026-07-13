@@ -1,0 +1,23 @@
+---
+- name: Ensure artifacts directory exists
+  file:
+    path: "{{ elixir_release_artifact_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Set release source directory fact
+  set_fact:
+    release_source_dir: "{{ elixir_release_build_dir }}/_build/{{ mix_env }}/rel/{{ app }}"
+
+- name: Create tar.gz artifact of the release
+  archive:
+    path: "{{ release_source_dir }}"
+    dest: "{{ elixir_release_artifact_dir }}/{{ app }}-{{ tag }}-release.tar.gz"
+    format: gz
+    owner: "{{ build_user }}"
+    group: "{{ build_user }}"
+    mode: '0644'
+
+- name: Show artifact location
+  debug:
+    msg: "Built artifact: {{ elixir_release_artifact_dir }}/{{ app }}-{{ tag }}-release.tar.gz"

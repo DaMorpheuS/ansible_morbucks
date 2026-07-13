@@ -1,0 +1,22 @@
+---
+# PostgreSQL runs on this same machine, so no delegation and no pg_hba changes
+# are needed - the app connects over 127.0.0.1, which pg_hba already allows.
+
+- name: Ensure PostgreSQL role exists for the app environment
+  community.postgresql.postgresql_user:
+    name: "{{ app_vars.environments[env].database_user }}"
+    password: "{{ app_vars.environments[env].database_password }}"
+    role_attr_flags: "LOGIN"
+    state: present
+  become: yes
+  become_user: postgres
+
+- name: Ensure PostgreSQL database exists for the app environment
+  community.postgresql.postgresql_db:
+    name: "{{ app_vars.environments[env].database_name }}"
+    owner: "{{ app_vars.environments[env].database_user }}"
+    encoding: "UTF8"
+    template: template0
+    state: present
+  become: yes
+  become_user: postgres

@@ -1,0 +1,54 @@
+---
+# Build an Elixir release locally on morbucks.
+# Run this ON morbucks (as root, or with sudo):
+#   ./build.sh <app> <tag>
+#
+# The heavy lifting (git clone, asdf install, mix release) runs as the
+# unprivileged `build_user` (deploy); only that user's home is touched.
+- name: Build Elixir release (local)
+  hosts: localhost
+  connection: local
+  become: true
+  become_user: "{{ build_user }}"
+  gather_facts: true
+  pre_tasks:
+    - name: Fail if no app specified
+      assert:
+        that: app is defined and app | length > 0
+        fail_msg: "Set --extra-vars app=NAME"
+      run_once: true
+
+    - name: Fail if no tag specified
+      assert:
+        that: tag is defined and tag | length > 0
+        fail_msg: "Set --extra-vars tag=VERSION (e.g. 1.2.3)"
+      run_once: true
+
+    - name: Check if app_vars file exists
+      stat:
+        path: "{{ playbook_dir }}/../app_vars/{{ app }}.yml"
+      register: app_vars_file
+      run_once: true
+
+    - name: Load app_vars for the app
+      include_vars:
+        file: "{{ playbook_dir }}/../app_vars/{{ app }}.yml"
+        name: "app_vars"
+      when: app_vars_file.stat.exists
+      run_once: true
+
+    - name: Fail with helpful message if app_vars file doesn't exist
+      fail:
+        msg: |
+          App configuration file 'app_vars/{{ app }}.yml' not found.
+
+          Available app configurations:
+          {% for file in (lookup('fileglob', playbook_dir + '/../app_vars/*.yml', wantlist=True) | map('basename') | map('regex_replace', '\.yml$', '') | sort) -%}
+          - {{ file }}
+          {% endfor %}
+
+          Specify one with: --extra-vars app=APP_NAME
+      when: not app_vars_file.stat.exists
+      run_once: true
+  roles:
+    - role: build-elixir-release

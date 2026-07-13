@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+# PostgreSQL Client Authentication Configuration File
+# Managed by ansible_morbucks - manual edits will be overwritten.
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# Local unix socket connections
+local   all             postgres                                peer
+local   all             all                                     scram-sha-256
+
+# IPv4/IPv6 loopback (apps on this host connect here)
+host    all             all             127.0.0.1/32            scram-sha-256
+host    all             all             ::1/128                 scram-sha-256
+
+{% for cidr in postgres_extra_hba_cidrs | default([]) %}
+host    all             all             {{ cidr }}            scram-sha-256
+{% endfor %}

@@ -1,0 +1,12 @@
+---
+# Admin users to create on the box, with their SSH public keys.
+# These are the same operators as the koopmans fleet so a rebuilt machine is
+# immediately reachable. Public keys only - safe to commit.
+admin_users:
+  - name: rkaper
+    ssh_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/H9sMjwD/ODokJ3a3zUm4XvtJIk4c6W2rf7Z7D3gtvGAKRdm3pLWiQZqtLBuxkVs/Iwo7V9duI2kbsTCRw6FzbZY7ghm1oCxVg/hg47IG2ZZOqtpfYEeMdlVZfpAZvMR1U85wCjE3Uw1ZAwBE/dWHUfOd1hualr7kCE+/4zH5BZ1f7jqypoPr090oD/Y2c/D0OkJTsmHIhHkuj+I9GwJjL8i60TxhcgmPQ29PWOmFEOe1BMPfsnjDXTNoEZZMC0cMfHuPPCFaQLwsr0L/Xnovs66meu7BJSYavK5HEokfbfNFgJ4Y+DjnUDDDaE79K+hff8XXH1k8EvdOm+LCowaIohdpG2FGxtMT907meuYnXqQpN2j46P25iv64UDJtaDBXC5+98brAba6fwrTQ86jXBZYgCw/SZRej3hrVswaF7NSIf/IDtWzxzWv6iJN7xkgmCMmW1N0BEFrB2u/1twn6oULdlI6WGWFFN4dZzTcM1wtN1bEBEnX2z5Ov1V8Uu/s= rkaper@mojojojo"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDDMmnGvnZGZLqt/2vAtDeNucURiIn4jgL51dwFFaGPHuAIX46FeXMqPldJL5DM+qaxd3xmr3a7SXoImt41iD9xc4TjmfaIJrj5C9p2YXpbEYcUvQH89YbugcbGzTpbg/TSmq64Qgp/U7RRSZbowBbnasF4JswkPQwgNMIaMTGj0pOgbrv0l9/SyIuHrvMREEfdVLG1ZjH9u6Ge43hcXT6G4fk8h7SQ1OJWpRs9o6BVJXlxMPNA+FXsmOYOAap154UPLKnZ3bijzZ6yS1wEDQoWE5lUeo3s8pRaH7EoKSV9HT7VonegUz2pXIOM9ZZr1eii63TH3XDpCy6mOVvdsJkdlTStmsyzUWxxaD3LBwusCXy/IlnbHwBzY/8OmiDHk8j3C/9UODegMmE88QNEE+UuJ8fs+9tx+nxt6b/nwJHGJ1kiQ3KQrL/t0i7/tdxiAq4+32xUBPgDmIW9RJsiAciOxfttupNtJ9VNan8+TUd80LcAAdgf0xG7xNQaZ2Vb5jM= rkaper@amouba"
+  - name: ldr
+    ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH6hxTyvhinwC9pQ61SzEol6vbVBpFNOS6rN4H0W35wK ldr-ed25519-20250203"

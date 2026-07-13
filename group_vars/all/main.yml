@@ -1,0 +1,46 @@
+---
+# ---------------------------------------------------------------------------
+# Global variables for the morbucks all-in-one server.
+# Secrets live in vault.yml (see vault.yml.example); everything here is safe
+# to commit.
+# ---------------------------------------------------------------------------
+
+# --- Build user -----------------------------------------------------------
+# Unprivileged user that owns the asdf toolchain and performs the actual
+# `mix release` build. Elixir/Erlang/Node versions are installed under this
+# user's home via asdf.
+build_user: "deploy"
+build_user_home: "/home/deploy"
+
+# --- asdf -----------------------------------------------------------------
+asdf_version: "0.18.0"
+asdf_install_path: "/opt/asdf"          # where the asdf binary lives
+asdf_binary_path: "/usr/local/bin/asdf" # symlink on PATH
+asdf_data_dir: "{{ build_user_home }}/.asdf"
+
+# --- Build / artifact locations (on morbucks) -----------------------------
+elixir_release_build_base_dir: "{{ build_user_home }}/builds"
+elixir_release_artifact_dir: "{{ build_user_home }}/artifacts"
+mix_env: "prod"
+
+# --- Release / deploy locations -------------------------------------------
+release_base_dir: "/opt/elixir_releases"
+release_group: "elixir"
+release_gid: 10000
+filestore_base_dir: "/opt/filestore"
+
+# --- PostgreSQL -----------------------------------------------------------
+postgres_version: "17"
+postgres_port: 5432
+# Single-machine setup: only listen on loopback by default. Add a LAN IP here
+# (e.g. "localhost,192.168.100.x") if you need remote admin access.
+postgres_listen_addresses: "localhost"
+postgres_password: "{{ vault_postgres_password | default('changeme123') }}"
+# Extra CIDRs to allow in pg_hba (beyond loopback). Usually empty.
+postgres_extra_hba_cidrs: []
+
+# --- Caddy ----------------------------------------------------------------
+caddy_config_dir: "/etc/caddy"
+caddy_sites_dir: "/etc/caddy/sites"
+# Email used for Let's Encrypt / ZeroSSL ACME registration.
+caddy_admin_email: "{{ vault_caddy_admin_email | default('admin@example.com') }}"

@@ -1,0 +1,4 @@
+---
+# postgres_version, postgres_port, postgres_listen_addresses,
+# postgres_password and postgres_extra_hba_cidrs are defined in
+# group_vars/all/main.yml so they can be shared with the deploy role.

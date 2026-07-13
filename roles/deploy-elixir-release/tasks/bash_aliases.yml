@@ -1,0 +1,33 @@
+---
+# Global shell helper so operators can run `app_env <cmd>` (e.g. remote console,
+# rpc) as the release user from anywhere on the box.
+
+- name: Ensure /etc/bash_aliases exists
+  file:
+    path: "/etc/bash_aliases"
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add {{ app }}_{{ env }} helper function to /etc/bash_aliases
+  blockinfile:
+    path: "/etc/bash_aliases"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ app }}_{{ env }}"
+    block: |
+      {{ app }}_{{ env }}() {
+        sudo -u {{ release_user }} -H -- env RELEASE_NODE={{ app }}_{{ env }} {{ release_dir }}/bin/{{ app }} "$@"
+      }
+
+- name: Check for /etc/bash.bashrc
+  stat:
+    path: "/etc/bash.bashrc"
+  register: etc_bash_bashrc
+
+- name: Ensure /etc/bash.bashrc sources /etc/bash_aliases
+  lineinfile:
+    path: "/etc/bash.bashrc"
+    line: "[ -f /etc/bash_aliases ] && . /etc/bash_aliases"
+    insertafter: EOF
+    state: present
+  when: etc_bash_bashrc.stat.exists

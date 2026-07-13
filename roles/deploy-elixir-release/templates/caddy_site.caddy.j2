@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+# Reverse-proxy vhost for {{ app }} ({{ env }}). Managed by ansible_morbucks -
+# regenerated on every deploy. Caddy obtains and renews the TLS certificate for
+# this domain automatically.
+{{ site_domain }} {
+	encode zstd gzip
+{% if site_routes | length > 0 %}
+{% for route in site_routes %}
+	handle {{ route.path }} {
+		reverse_proxy {{ route.upstream | default('127.0.0.1:' ~ route.port) }}
+	}
+{% endfor %}
+{% else %}
+	reverse_proxy 127.0.0.1:{{ site_http_port }}
+{% endif %}
+}

@@ -1,0 +1,37 @@
+---
+# Register (or refresh) this app's reverse-proxy vhost in Caddy. Caddy issues
+# and renews the TLS certificate for the domain automatically.
+#
+# app_vars.environments[env] must provide:
+#   domain:    public hostname, e.g. "orders.example.com"
+#   http_port: local port the release listens on, e.g. 4060
+# Optionally, for path-based routing to several upstreams:
+#   caddy_routes:
+#     - { path: "/api/*", port: 4060 }
+#     - { path: "/*",     upstream: "127.0.0.1:4061" }
+
+- name: Set Caddy vhost facts
+  set_fact:
+    site_domain: "{{ app_vars.environments[env].domain }}"
+    site_http_port: "{{ app_vars.environments[env].http_port | default('') }}"
+    site_routes: "{{ app_vars.environments[env].caddy_routes | default([]) }}"
+
+- name: Fail if neither http_port nor caddy_routes is defined
+  assert:
+    that: (site_http_port | string | length > 0) or (site_routes | length > 0)
+    fail_msg: >-
+      app_vars.environments[{{ env }}] defines a domain ({{ site_domain }}) but
+      no http_port and no caddy_routes - Caddy has nothing to proxy to.
+
+- name: Write the Caddy vhost snippet
+  template:
+    src: caddy_site.caddy.j2
+    dest: "{{ caddy_sites_dir }}/{{ app }}_{{ env }}.caddy"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload caddy
+
+- name: Validate the full Caddy configuration
+  command: "caddy validate --config {{ caddy_config_dir }}/Caddyfile --adapter caddyfile"
+  changed_when: false

@@ -1,0 +1,105 @@
+---
+# Clone the app repo at the requested tag into the build directory. Requires
+# the build user to have SSH access to the git remote (deploy key or agent).
+
+- name: Check if build directory exists
+  stat:
+    path: "{{ elixir_release_build_dir }}"
+  register: build_dir_stat
+
+- name: Check if build directory is a git repository
+  stat:
+    path: "{{ elixir_release_build_dir }}/.git"
+  register: git_dir_stat
+  when: build_dir_stat.stat.exists
+
+- name: Get current git remote URL if present
+  command: "git remote get-url origin"
+  args:
+    chdir: "{{ elixir_release_build_dir }}"
+  register: current_remote_url
+  failed_when: false
+  when: build_dir_stat.stat.exists and git_dir_stat.stat.exists
+
+- name: Determine whether existing checkout matches the expected repo
+  set_fact:
+    repo_matches: "{{ current_remote_url.stdout | default('') == app_vars.repo }}"
+  when: build_dir_stat.stat.exists and git_dir_stat.stat.exists and current_remote_url.rc == 0
+
+- name: Remove build dir if it is not the expected repo
+  file:
+    path: "{{ elixir_release_build_dir }}"
+    state: absent
+  when: build_dir_stat.stat.exists and (not git_dir_stat.stat.exists or not repo_matches | default(false))
+
+- name: Clone the repository at the requested tag
+  block:
+    - name: Clone the repository
+      git:
+        repo: "{{ app_vars.repo }}"
+        dest: "{{ elixir_release_build_dir }}"
+        version: "{{ tag }}"
+        force: yes
+  when: not build_dir_stat.stat.exists or (build_dir_stat.stat.exists and (not git_dir_stat.stat.exists or not repo_matches | default(false)))
+  rescue:
+    - name: List available tags when clone fails
+      shell: "git tag -l | sort -V"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+      register: available_tags
+      failed_when: false
+
+    - name: Fail with available tags
+      fail:
+        msg: |
+          Tag '{{ tag }}' not found in repository '{{ app_vars.repo }}'.
+
+          Available tags:
+          {% for tag_name in available_tags.stdout_lines | default([]) %}
+          - {{ tag_name }}
+          {% endfor %}
+
+- name: Reset existing checkout to the exact tag state
+  block:
+    - name: Reset uncommitted changes
+      command: "git reset --hard HEAD"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+
+    - name: Clean untracked files
+      command: "git clean -fd"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+
+    - name: Fetch all refs and tags
+      command: "git fetch --all --tags"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+
+    - name: Checkout the requested tag
+      command: "git checkout {{ tag }}"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+
+    - name: Reset to the exact tag state
+      command: "git reset --hard {{ tag }}"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+  rescue:
+    - name: List available tags when checkout fails
+      shell: "git tag -l | sort -V"
+      args:
+        chdir: "{{ elixir_release_build_dir }}"
+      register: available_tags
+      failed_when: false
+
+    - name: Fail with available tags
+      fail:
+        msg: |
+          Tag '{{ tag }}' not found in repository '{{ app_vars.repo }}'.
+
+          Available tags:
+          {% for tag_name in available_tags.stdout_lines | default([]) %}
+          - {{ tag_name }}
+          {% endfor %}
+  when: build_dir_stat.stat.exists and git_dir_stat.stat.exists and repo_matches | default(false)

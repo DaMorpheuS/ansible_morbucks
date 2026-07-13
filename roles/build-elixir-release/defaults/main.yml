@@ -1,0 +1,8 @@
+---
+# Reusable environment for every asdf/mix command in this role. asdf itself is
+# on PATH via /usr/local/bin; language shims live under the build user's data
+# dir. This runs non-interactively so nothing from .bashrc is sourced - the
+# env must be explicit.
+asdf_env:
+  ASDF_DATA_DIR: "{{ asdf_data_dir }}"
+  PATH: "{{ asdf_data_dir }}/shims:/usr/local/bin:/usr/bin:/bin"

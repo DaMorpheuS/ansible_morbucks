@@ -1,0 +1,14 @@
+---
+# Example vault file. To use it:
+#   cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+#   ansible-vault encrypt group_vars/all/vault.yml
+# Then run playbooks with --ask-vault-pass (or configure a vault password file).
+#
+# vault.yml is git-ignored so the encrypted (or plaintext) copy is never
+# committed by accident.
+
+# PostgreSQL superuser password (the `postgres` role user).
+vault_postgres_password: "change_me_to_something_strong"
+
+# Email address Caddy registers with the ACME CA for TLS certificates.
+vault_caddy_admin_email: "you@example.com"

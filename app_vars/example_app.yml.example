@@ -1,0 +1,63 @@
+---
+# Per-app configuration. Copy to app_vars/<app>.yml (the name must match the
+# OTP app / release name you pass to build.sh / deploy.sh) and edit.
+#
+#   cp app_vars/example_app.yml.example app_vars/my_app.yml
+#
+# NOTE: these files can contain database passwords. Either keep them out of git
+# (they're covered by .gitignore if you uncomment the app_vars rule) or move the
+# secrets into the vault.
+
+# Git remote to build from. The build user needs SSH access to this repo
+# (deploy key in /home/deploy/.ssh, or forward your agent when building).
+repo: git@github.com:kpmz/my_app.git
+
+# Deployment environments. `env` on the command line selects one of these.
+# This is the DEPLOYMENT environment, not MIX_ENV (releases are always prod).
+environments:
+
+  prod:
+    # --- Reverse proxy (Caddy) ------------------------------------------
+    # Set `domain` to publish the app externally with an automatic TLS cert.
+    # Omit `domain` entirely to keep the app internal (no Caddy vhost).
+    domain: "myapp.example.com"
+    # Local port the release listens on; Caddy proxies 127.0.0.1:<http_port>.
+    http_port: 4060
+
+    # Optional: path-based routing instead of a single upstream.
+    # caddy_routes:
+    #   - { path: "/api/*", port: 4060 }
+    #   - { path: "/*",     upstream: "127.0.0.1:4061" }
+
+    # --- Database (PostgreSQL on this same host) ------------------------
+    # If database_name is set, the deploy creates the role + database and runs
+    # migrations. The app connects over 127.0.0.1.
+    database_host: "127.0.0.1"
+    database_port: 5432
+    database_name: "my_app_prod"
+    database_user: "my_app_prod"
+    database_password: "change_me"
+
+    # --- App-specific settings used by the bundled config.exs.j2 --------
+    public_base_url: "https://myapp.example.com"
+    secret_key_base: "generate_with_mix_phx_gen_secret"
+
+    # --- Filestore: keys become absolute dirs, created and passed to config
+    # e.g. upload_path -> /opt/filestore/prod/my_app/uploads
+    filestore:
+      upload_path: "uploads"
+      article_path: "articles"
+
+  acc:
+    domain: "myapp-acc.example.com"
+    http_port: 3060
+    database_host: "127.0.0.1"
+    database_port: 5432
+    database_name: "my_app_acc"
+    database_user: "my_app_acc"
+    database_password: "change_me"
+    public_base_url: "https://myapp-acc.example.com"
+    secret_key_base: "generate_with_mix_phx_gen_secret"
+    filestore:
+      upload_path: "uploads"
+      article_path: "articles"

@@ -1,0 +1,7 @@
+---
+# asdf plugins to pre-install for the build user. Actual language *versions*
+# are installed at build time from each project's .tool-versions file.
+asdf_plugins:
+  - erlang
+  - elixir
+  - nodejs

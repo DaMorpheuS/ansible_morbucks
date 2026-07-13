@@ -1,0 +1,35 @@
+[Unit]
+Description={{ app }} ({{ env }}) - Elixir Application
+After=network.target postgresql.service
+Wants=network.target
+
+[Service]
+Type=simple
+
+User={{ release_user }}
+Group={{ release_group }}
+WorkingDirectory={{ release_dir }}
+
+Environment=RELEASE_NODE={{ app }}_{{ env }}@{{ ansible_hostname }}
+
+Environment="LANG=en_US.UTF-8"
+Environment="LC_ALL=en_US.UTF-8"
+Environment="ELIXIR_ERL_OPTIONS=+fnu"
+
+ExecStart={{ release_dir }}/bin/{{ app }} start
+ExecStop={{ release_dir }}/bin/{{ app }} stop
+ExecReload={{ release_dir }}/bin/{{ app }} restart
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=45
+KillSignal=SIGTERM
+KillMode=mixed
+LimitNOFILE=65536
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier={{ app }}_{{ env }}
+
+[Install]
+WantedBy=multi-user.target

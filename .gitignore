@@ -1,0 +1,10 @@
+# Decrypted vault - never commit secrets in the clear
+group_vars/all/vault.yml
+
+# Real per-app configs may contain secrets; commit only the .example
+# (remove the next line if you deliberately want app_vars tracked)
+# app_vars/*.yml
+
+*.retry
+__pycache__/
+.DS_Store

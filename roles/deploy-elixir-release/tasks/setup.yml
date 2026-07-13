@@ -1,0 +1,31 @@
+---
+- name: Set release_dir fact
+  set_fact:
+    release_dir: "{{ release_base_dir }}/{{ env }}/{{ app }}"
+
+- name: Set release_user fact
+  set_fact:
+    release_user: "{{ app }}_{{ env }}"
+
+- name: Ensure elixir group exists
+  group:
+    name: "{{ release_group }}"
+    gid: "{{ release_gid }}"
+    state: present
+
+- name: Ensure release user exists
+  user:
+    name: "{{ release_user }}"
+    group: "{{ release_group }}"
+    system: yes
+    shell: /bin/bash
+    create_home: yes
+    home: "{{ release_dir }}"
+
+- name: Create release directory
+  file:
+    state: directory
+    path: "{{ release_dir }}"
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+    mode: '0750'

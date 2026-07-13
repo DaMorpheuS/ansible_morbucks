@@ -1,0 +1,86 @@
+---
+# If the release bundles a config.exs.j2 at its root, render it to config.exs
+# using the environment-scoped variables from app_vars. Filestore keys are
+# expanded to absolute paths under {{ filestore_base_dir }}/<env>/<app>/.
+
+- name: Check for a bundled config.exs.j2 in the release
+  stat:
+    path: "{{ release_dir }}/config.exs.j2"
+  register: release_config_j2_stat
+
+- name: Read bundled config.exs.j2
+  slurp:
+    src: "{{ release_dir }}/config.exs.j2"
+  register: release_config_j2_slurp
+  when: release_config_j2_stat.stat.exists
+
+- name: Build environment-scoped templating variables
+  set_fact:
+    release_env_vars: "{{ app_vars.environments[env] }}"
+  when: release_config_j2_stat.stat.exists
+
+- name: Expand filestore keys to absolute paths
+  set_fact:
+    filestore_full_paths: "{{ filestore_full_paths | default({}) | combine({ item.key: filestore_base_dir ~ '/' ~ env ~ '/' ~ app ~ '/' ~ item.value }) }}"
+  loop: "{{ release_env_vars.filestore | dict2items }}"
+  when:
+    - release_config_j2_stat.stat.exists
+    - release_env_vars.filestore is defined
+    - release_env_vars.filestore | length > 0
+
+- name: Merge expanded filestore paths back into release_env_vars
+  set_fact:
+    release_env_vars: "{{ release_env_vars | combine({ 'filestore': filestore_full_paths }) }}"
+  when:
+    - release_config_j2_stat.stat.exists
+    - filestore_full_paths is defined
+
+- name: Export environment-scoped variables as facts for templating
+  set_fact:
+    "{{ item.key }}": "{{ item.value }}"
+  loop: "{{ release_env_vars | dict2items }}"
+  when: release_config_j2_stat.stat.exists
+
+- name: Export individual filestore paths as facts
+  set_fact:
+    "{{ item.key }}": "{{ item.value }}"
+  loop: "{{ filestore_full_paths | dict2items }}"
+  when:
+    - release_config_j2_stat.stat.exists
+    - filestore_full_paths is defined
+
+- name: Create a temporary copy of the bundled template
+  tempfile:
+    state: file
+    prefix: "ansible-config-exs-"
+    suffix: ".j2"
+  register: local_config_template_tmp
+  when: release_config_j2_stat.stat.exists
+
+- name: Write bundled template content to the temp file
+  copy:
+    dest: "{{ local_config_template_tmp.path }}"
+    content: "{{ release_config_j2_slurp.content | b64decode }}"
+    mode: '0644'
+  when: release_config_j2_stat.stat.exists
+
+- name: Render config.exs into the release
+  template:
+    src: "{{ local_config_template_tmp.path }}"
+    dest: "{{ release_dir }}/config.exs"
+    owner: "{{ release_user }}"
+    group: "{{ release_group }}"
+    mode: '0640'
+  when: release_config_j2_stat.stat.exists
+  notify: Restart elixir service
+
+- name: Remove the temporary template file
+  file:
+    path: "{{ local_config_template_tmp.path }}"
+    state: absent
+  when: release_config_j2_stat.stat.exists
+
+- name: Note when no bundled config template is present
+  debug:
+    msg: "No config.exs.j2 bundled in the release - skipping config rendering."
+  when: not release_config_j2_stat.stat.exists

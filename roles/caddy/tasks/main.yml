@@ -1,0 +1,69 @@
+---
+- name: Install Caddy repo prerequisites
+  apt:
+    name:
+      - debian-keyring
+      - debian-archive-keyring
+      - apt-transport-https
+      - curl
+      - gpg
+    state: present
+    update_cache: yes
+
+- name: Ensure apt keyrings directory exists
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download Caddy signing key
+  get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+    dest: /tmp/caddy-stable.gpg.key
+    mode: '0644'
+
+- name: Install Caddy signing key (dearmored)
+  command:
+    cmd: gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /tmp/caddy-stable.gpg.key
+    creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+- name: Add Caddy apt repository
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+    filename: caddy-stable
+    state: present
+    update_cache: yes
+
+- name: Install Caddy
+  apt:
+    name: caddy
+    state: present
+
+- name: Ensure Caddy sites directory exists
+  file:
+    path: "{{ caddy_sites_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy base Caddyfile
+  template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_config_dir }}/Caddyfile"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload caddy
+
+- name: Validate Caddy configuration
+  command: "caddy validate --config {{ caddy_config_dir }}/Caddyfile --adapter caddyfile"
+  changed_when: false
+
+- name: Ensure Caddy is running and enabled
+  systemd:
+    name: caddy
+    state: started
+    enabled: yes
