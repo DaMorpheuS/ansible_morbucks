@@ -6,3 +6,11 @@
 asdf_env:
   ASDF_DATA_DIR: "{{ asdf_data_dir }}"
   PATH: "{{ asdf_data_dir }}/shims:/usr/local/bin:/usr/bin:/bin"
+
+# Plugins ensured before `asdf install` reads .tool-versions. Add here if an
+# app pins a tool beyond these (they are also pre-added during provisioning).
+asdf_build_plugins:
+  - erlang
+  - elixir
+  - nodejs
+
