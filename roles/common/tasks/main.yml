@@ -20,6 +20,9 @@
       # playbooks can run locally on morbucks.
       - rsync
       - ansible
+      # ffmpeg: the uithangbord saas asset pipeline (NormalizeJob/SliceJob)
+      # shells out to it for image/video normalization.
+      - ffmpeg
     state: present
 
 - name: Set system timezone to UTC
