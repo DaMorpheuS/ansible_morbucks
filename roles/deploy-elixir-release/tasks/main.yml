@@ -7,6 +7,9 @@
 - name: Create release user, group and directories
   include_tasks: setup.yml
 
+- name: Derive DB credentials and generate/persist app secrets
+  include_tasks: secrets.yml
+
 - name: Extract the release artifact
   include_tasks: artifact.yml
 
@@ -15,11 +18,11 @@
 
 - name: Ensure PostgreSQL role and database
   include_tasks: postgres.yml
-  when: app_vars.environments[env].database_name is defined
+  when: app_vars.environments[env].database | default(false)
 
 - name: Run database migrations
   include_tasks: migrate.yml
-  when: app_vars.environments[env].database_name is defined
+  when: app_vars.environments[env].database | default(false)
 
 - name: Install and start the systemd service
   include_tasks: systemd.yml

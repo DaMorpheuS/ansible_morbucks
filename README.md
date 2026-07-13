@@ -72,13 +72,25 @@ cd /opt/ansible_morbucks
 Erlang/Elixir/Node versions via asdf before running `mix release`.
 
 `deploy.sh`:
+- derives DB credentials (`<app>_<env>`) and generates/persists the app's
+  `secret_key_base` + admin password on the box (so `app_vars` holds no secrets),
 - extracts the artifact to `/opt/elixir_releases/<env>/<app>`,
 - renders `config.exs` (if the release bundles `config.exs.j2`),
 - ensures the PostgreSQL role + database and runs migrations (when
-  `database_name` is set),
+  `database: true`),
 - installs and starts a `systemd` unit `<app>_<env>`,
 - **writes `/etc/caddy/sites/<app>_<env>.caddy`** and reloads Caddy, so the app
   is reachable at its `domain` over HTTPS.
+
+### Secrets
+
+`app_vars/*.yml` are kept **secret-free** so they can be committed (even to a
+public repo). Per app/env the deploy role persists `secret_key_base` and the
+admin password under `/opt/elixir_releases/.secrets/<env>/<app>/` and reuses them
+on later deploys; the admin password is printed at the end of each deploy. To
+change one, edit the file there and redeploy. Only `group_vars/all/vault.yml`
+(Postgres superuser password + ACME email, used at provisioning time) stays out
+of git.
 
 ## How the Caddy reverse-proxy registration works
 

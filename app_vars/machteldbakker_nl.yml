@@ -1,0 +1,31 @@
+---
+# App: machteldbakker_nl  (https://github.com/DaMorpheuS/machteldbakker_nl)
+#
+# Public-safe: this file contains NO secrets, so it is fine to commit even to a
+# public repo.
+#   * Database name/user/password all default to "<app>_<env>"
+#     (machteldbakker_nl_prod) - the DB only listens on loopback.
+#   * secret_key_base and the admin password are generated once and persisted
+#     ON the box at deploy time (see the deploy role's secrets.yml).
+repo: https://github.com/DaMorpheuS/machteldbakker_nl.git
+
+environments:
+
+  prod:
+    # --- Reverse proxy (Caddy auto-TLS) ---------------------------------
+    # DNS for this domain must point at morbucks for the certificate to issue.
+    domain: "machteldbakker.nl"
+    public_host: "machteldbakker.nl"
+    http_port: 4070
+
+    # --- Database (local PostgreSQL, loopback only) ---------------------
+    # database: true  -> deploy creates the role/db and runs migrations.
+    # name/user/password are derived as <app>_<env>; override here if needed.
+    database: true
+    database_host: "127.0.0.1"
+    database_port: 5432
+
+    # --- Mail: send through the local SMTP relay on morbucks ------------
+    mail_relay: "127.0.0.1"
+    mail_port: 25
+    mail_from_email: "noreply@machteldbakker.nl"

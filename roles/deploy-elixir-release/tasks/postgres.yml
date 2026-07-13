@@ -4,8 +4,8 @@
 
 - name: Ensure PostgreSQL role exists for the app environment
   community.postgresql.postgresql_user:
-    name: "{{ app_vars.environments[env].database_user }}"
-    password: "{{ app_vars.environments[env].database_password }}"
+    name: "{{ database_user }}"
+    password: "{{ database_password }}"
     role_attr_flags: "LOGIN"
     state: present
   become: yes
@@ -13,8 +13,8 @@
 
 - name: Ensure PostgreSQL database exists for the app environment
   community.postgresql.postgresql_db:
-    name: "{{ app_vars.environments[env].database_name }}"
-    owner: "{{ app_vars.environments[env].database_user }}"
+    name: "{{ database_name }}"
+    owner: "{{ database_user }}"
     encoding: "UTF8"
     template: template0
     state: present
