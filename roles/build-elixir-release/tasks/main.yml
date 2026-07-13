@@ -7,9 +7,15 @@
     state: directory
     mode: '0750'
 
-- name: Set build directory fact
+- name: Set build directory facts
   set_fact:
+    # The repo is always cloned at elixir_release_build_dir. For a monorepo the
+    # mix project lives in a subdirectory (app_vars.subdir); mix runs in
+    # mix_project_dir, while git clone and asdf (.tool-versions at the repo
+    # root) operate on elixir_release_build_dir. Without a subdir the two are
+    # identical, so single-repo apps are unaffected.
     elixir_release_build_dir: "{{ elixir_release_build_base_dir }}/{{ app }}-{{ tag }}"
+    mix_project_dir: "{{ elixir_release_build_base_dir }}/{{ app }}-{{ tag }}{{ ('/' ~ (app_vars.subdir | default(''))) if (app_vars.subdir | default('')) | length > 0 else '' }}"
 
 - name: Clone/checkout the application repository
   include_tasks: git.yml

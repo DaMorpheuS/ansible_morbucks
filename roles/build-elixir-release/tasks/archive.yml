@@ -7,7 +7,7 @@
 
 - name: Set release source directory fact
   set_fact:
-    release_source_dir: "{{ elixir_release_build_dir }}/_build/{{ mix_env }}/rel/{{ app }}"
+    release_source_dir: "{{ mix_project_dir }}/_build/{{ mix_env }}/rel/{{ app }}"
 
 - name: Create tar.gz artifact of the release
   archive:

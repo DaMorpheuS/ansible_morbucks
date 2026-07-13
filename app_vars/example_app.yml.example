@@ -14,6 +14,11 @@
 # use git@github.com:... for a private repo (the deploy user needs SSH access).
 repo: https://github.com/DaMorpheuS/my_app.git
 
+# Monorepo only: relative path to the mix project within the repo. Omit for a
+# standalone repo (the default). The repo is cloned at its root and asdf reads
+# .tool-versions there, but mix build + release run inside this subdir.
+# subdir: apps/my_app
+
 environments:
 
   prod:

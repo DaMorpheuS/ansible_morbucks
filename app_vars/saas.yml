@@ -1,0 +1,45 @@
+---
+# App: saas  (Uithangbord SaaS)
+#
+# The OTP app / release name is `saas`, so this file is named saas.yml and the
+# build/deploy commands take `saas` as the app argument:
+#   ./build.sh saas <tag> ; ./deploy.sh saas <tag> prod
+#
+# Public-safe: NO secrets here. The DB name/user/password default to
+# "<app>_<env>" (saas_prod), and secret_key_base + the admin password are
+# generated and persisted on the box at deploy time.
+
+# Private repo -> the `deploy` user on morbucks needs the read-only deploy key
+# (/home/deploy/.ssh/id_ed25519.pub) added to the GitHub repo's Deploy keys.
+repo: git@github.com:uithangbord/uithangbord.git
+
+# Monorepo: the Phoenix app lives in the saas/ subdirectory, not at the repo
+# root. The build role clones the repo root but runs mix inside this subdir.
+subdir: saas
+
+environments:
+
+  prod:
+    # --- Reverse proxy (Caddy auto-TLS) ---------------------------------
+    # DNS for uithangbord.shop already points at morbucks (217.160.42.57).
+    domain: "uithangbord.shop"
+    public_host: "uithangbord.shop"
+    http_port: 4080
+
+    # --- Database (local PostgreSQL, loopback only) ---------------------
+    database: true
+    database_host: "127.0.0.1"
+    database_port: 5432
+
+    # --- Persistent filestore for content-addressed asset blobs ---------
+    # config :saas, :storage_dir must point at a writable dir OUTSIDE the
+    # release dir (which is replaced on every deploy). This key expands to
+    # /opt/filestore/prod/saas/blobs, created and owned by the release user,
+    # and is exposed to config.exs.j2 as {{ storage_dir }}.
+    filestore:
+      storage_dir: blobs
+
+    # --- Mail: send through the local SMTP relay on morbucks ------------
+    mail_relay: "127.0.0.1"
+    mail_port: 25
+    mail_from_email: "noreply@uithangbord.shop"

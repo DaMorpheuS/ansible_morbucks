@@ -51,6 +51,10 @@ Model these on koopmans_transportportal / machteldbakker_nl:
    `database_port: 5432`, and `mail_*`. Do NOT put DB passwords / secret_key_base
    / admin password here — the deploy role derives DB creds as `<app>_<env>` and
    generates+persists the rest under `/opt/elixir_releases/.secrets/<env>/<app>/`.
+   **Monorepo?** Add top-level `subdir: <path>` (e.g. `subdir: saas`) so the
+   build runs mix inside that subdir; the repo is still cloned at its root and
+   asdf reads `.tool-versions` there. Worked reference: `app_vars/saas.yml`
+   (uithangbord monorepo, app in `saas/`).
 2. Commit + push `app_vars/<app>.yml` (public-safe).
 3. **Point DNS** for the domain at 217.160.42.57 *before* deploying, or Caddy's
    ACME cert will fail. For testing without DNS, set `caddy_global_extra` to the
